@@ -1,0 +1,41 @@
+{
+  "name": "eksearch",
+  "version": "1.0.0",
+  "description": "",
+  "main": "ek-search.js",
+  "scripts": {
+    "start": "npm run watch-js",
+    "watch-js": "webpack-dev-server --config ./tasks/webpack.dev.js --mode development",
+    "build": "webpack --config ./tasks/webpack.prod.js"
+  },
+  "author": "Origo",
+  "license": "MIT",
+  "dependencies": {
+    "awesomplete": "^1.1.5",
+    "@babel/polyfill": "^7.11.5",
+    "@babel/runtime-corejs2": "^7.11.2",
+    "ol": "^6.5.0",
+    "whatwg-fetch": "^3.5.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.13.14",
+    "@babel/plugin-transform-runtime": "^7.11.5",
+    "@babel/preset-env": "^7.11.5",
+    "autoprefixer": "^9.8.6",
+    "babel-eslint": "^8.0.1",
+    "babel-loader": "^8.0.4",
+    "compression-webpack-plugin": "^1.1.11",
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.22.0",
+    "exports-loader": "^0.7.0",
+    "imports-loader": "^0.8.0",
+    "uglifyjs-webpack-plugin": "^2.1.2",
+    "webpack": "^4.44.1",
+    "webpack-bundle-analyzer": "^3.8.0",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0",
+    "webpack-merge": "^4.2.1",
+    "write-file-webpack-plugin": "^4.5.0"
+  }
+}
