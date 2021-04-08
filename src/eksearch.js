@@ -302,9 +302,7 @@ const eksearch = function eksearch(options = {}) {
     function serialize(obj) {
       const str = [];
       Object.entries(obj).forEach((key) => {
-        if (obj.key) {
-          str.push(`${encodeURIComponent(key)}=${encodeURIComponent(obj[key])}`);
-        }
+        str.push(`${encodeURIComponent(key[0])}=${encodeURIComponent(key[1])}`);
       });
       return str.join('&');
     }
