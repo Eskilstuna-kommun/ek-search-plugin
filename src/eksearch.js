@@ -5,6 +5,7 @@ import MultiLineString from 'ol/geom/MultiLineString';
 import Awesomplete from 'awesomplete';
 import generateUUID from './utils/generateuuid';
 import checkExistingSelection from './utils/checkselection';
+import getCenter from './utils/getcenter';
 
 const eksearch = function eksearch(options = {}) {
   const keyCodes = {
@@ -48,6 +49,7 @@ const eksearch = function eksearch(options = {}) {
   let containerElement;
   let wrapperElement;
   let selectionManager;
+  let featureInfo;
   const dom = Origo.ui.dom;
 
   function showFeatureInfo(features, layer, ftl) {
@@ -56,8 +58,15 @@ const eksearch = function eksearch(options = {}) {
     layer.set('attributes', 'textHtml');
 
     const item = new Origo.SelectedItem(feature, layer, map, layer.get('name'), layer.get('title'));
+    const isOverlay = viewer.getViewerOptions().featureinfoOptions.infowindow === 'overlay';
 
-    if (checkExistingSelection(item, selectionManager)) {
+    if (isOverlay) {
+      const obj = {};
+      obj.feature = feature;
+      obj.title = layer.get('title');
+      obj.content = `<div class="o-identify-content">${ftl}</div>`;
+      featureInfo.render([obj], 'overlay', getCenter(feature.getGeometry()));
+    } else if (checkExistingSelection(item, selectionManager)) {
       selectionManager.addOrHighlightItem(item);
     }
     viewer.zoomToExtent(feature.getGeometry(), maxZoomLevel);
@@ -354,6 +363,7 @@ const eksearch = function eksearch(options = {}) {
     onAdd(evt) {
       viewer = evt.target;
       selectionManager = viewer.getSelectionManager();
+      featureInfo = viewer.getControlByName('featureInfo');
       name = 'title'; // options.searchAttribute;
 
       if (!northing) northing = undefined;
