@@ -1,4 +1,4 @@
-# origo-ek-search
+# ek-search-plugin
 
 Ändringar till Origos sökfunktion utlyft som egen plugin.
 
