@@ -103,7 +103,7 @@ const eksearch = function eksearch(options = {}) {
       let FeatureInfoUrl = layer.getSource().getFeatureInfoUrl(coord, resolution, proj, {
         INFO_FORMAT: 'text/html',
         feature_count: 1,
-        buffer: 1
+        buffer: 2
       });
 
       FeatureInfoUrl += encodeURI(`&filter=<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc"><ogc:PropertyIsEqualTo><ogc:PropertyName>${queryAttribute}</ogc:PropertyName><ogc:Literal>${id}</ogc:Literal></ogc:PropertyIsEqualTo></ogc:Filter>`);
