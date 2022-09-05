@@ -65,7 +65,7 @@ const eksearch = function eksearch(options = {}) {
       obj.feature = feature;
       obj.title = layer.get('title');
       obj.content = `<div class="o-identify-content">${ftl}</div>`;
-      featureInfo.render([obj], 'overlay', getCenter(feature.getGeometry()));
+      featureInfo.render([obj], 'overlay', getCenter(feature.getGeometry()), { ignorePan: true });
     } else if (checkExistingSelection(item, selectionManager)) {
       selectionManager.addOrHighlightItem(item);
     }
