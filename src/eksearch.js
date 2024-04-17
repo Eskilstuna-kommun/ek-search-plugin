@@ -87,7 +87,7 @@ const eksearch = function eksearch(options = {}) {
       `&filter=<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc"><ogc:PropertyIsEqualTo><ogc:PropertyName>${queryAttribute}</ogc:PropertyName><ogc:Literal>${id}</ogc:Literal></ogc:PropertyIsEqualTo></ogc:Filter>`
     ].join(''));
 
-    const response = await fetch(sourceUrl + QueryString).then(res => res.json());
+    const response = await fetch(sourceUrl + QueryString).then((res) => res.json());
 
     const features = format.readFeatures(response);
     if (features.length > 0) {
@@ -109,7 +109,7 @@ const eksearch = function eksearch(options = {}) {
       FeatureInfoUrl += encodeURI(`&filter=<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc"><ogc:PropertyIsEqualTo><ogc:PropertyName>${queryAttribute}</ogc:PropertyName><ogc:Literal>${id}</ogc:Literal></ogc:PropertyIsEqualTo></ogc:Filter>`);
 
       fetch(FeatureInfoUrl)
-        .then(res => res.text())
+        .then((res) => res.text())
         .then((ftl) => {
           showFeatureInfo(features, layer, ftl);
         });
@@ -202,7 +202,7 @@ const eksearch = function eksearch(options = {}) {
 
   function dbToList() {
     const items = Object.keys(searchDb);
-    return items.map(item => searchDb[item]);
+    return items.map((item) => searchDb[item]);
   }
 
   function groupDb(data) {
@@ -330,7 +330,7 @@ const eksearch = function eksearch(options = {}) {
           },
           body: serialize(data)
         })
-          .then(response => response.json())
+          .then((response) => response.json())
           .then((json) => {
             clearSearchResults();
             if (json) { reqHandler(parseData(json)); }
@@ -341,7 +341,7 @@ const eksearch = function eksearch(options = {}) {
           queryUrl += `&l=${viewer.getSearchableLayers(searchableDefault)}`;
         }
         fetch(queryUrl)
-          .then(response => response.json())
+          .then((response) => response.json())
           .then(reqHandler);
       }
     }
