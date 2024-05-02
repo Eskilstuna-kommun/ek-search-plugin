@@ -2,6 +2,8 @@ import Origo from 'Origo';
 import GeoJSONFormat from 'ol/format/GeoJSON';
 import MultiPoint from 'ol/geom/MultiPoint';
 import MultiLineString from 'ol/geom/MultiLineString';
+import Polygon from 'ol/geom/Polygon';
+import MultiPolygon from 'ol/geom/MultiPolygon';
 import Awesomplete from 'awesomplete';
 import generateUUID from './utils/generateuuid';
 import checkExistingSelection from './utils/checkselection';
@@ -37,7 +39,8 @@ const eksearch = function eksearch(options = {}) {
 
   const {
     idAttribute,
-    url
+    url,
+    estatePartConfig
   } = options;
 
   let searchDb = {};
@@ -52,20 +55,33 @@ const eksearch = function eksearch(options = {}) {
   let featureInfo;
   const dom = Origo.ui.dom;
 
-  function showFeatureInfo(features, layer, ftl) {
+  function showFeatureInfo({
+    features, layer, textHTML, targetFeatureCollection, targetLayer
+  }) {
     const feature = features[0];
-    feature.set('textHtml', ftl);
+    feature.set('textHtml', textHTML);
     layer.set('attributes', 'textHtml');
+    let item;
+    if (targetLayer) {
+      targetFeatureCollection[0].set('textHtml', textHTML);
+      targetLayer.set('attributes', 'textHtml');
+      item = new Origo.SelectedItem(targetFeatureCollection[0], targetLayer, map, targetLayer.get('name'), targetLayer.get('title'));
+    } else item = new Origo.SelectedItem(feature, layer, map, layer.get('name'), layer.get('title'));
+    let layerTitle = layer.get('title');
 
-    const item = new Origo.SelectedItem(feature, layer, map, layer.get('name'), layer.get('title'));
     const isOverlay = viewer.getViewerOptions().featureinfoOptions.infowindow === 'overlay';
+    let geometry;
+    if (targetFeatureCollection) {
+      geometry = targetFeatureCollection[0].getGeometry();
+      layerTitle = targetLayer.get('title');
+    } else geometry = feature.getGeometry();
 
     if (isOverlay) {
       const obj = {};
-      obj.feature = feature;
-      obj.title = layer.get('title');
-      obj.content = `<div class="o-identify-content">${ftl}</div>`;
-      featureInfo.render([obj], 'overlay', getCenter(feature.getGeometry()), { ignorePan: true });
+      obj.feature = targetFeatureCollection[0];
+      obj.title = layerTitle;
+      obj.content = `<div class="o-identify-content">${textHTML}</div>`;
+      featureInfo.render([obj], 'overlay', getCenter(geometry), { ignorePan: true });
     } else if (checkExistingSelection(item, selectionManager)) {
       selectionManager.addOrHighlightItem(item);
     }
@@ -79,10 +95,11 @@ const eksearch = function eksearch(options = {}) {
     const format = new GeoJSONFormat({
       geometryName
     });
+    const searchHitLayerName = layer.get('name');
 
     const QueryString = encodeURI(['service=WFS',
       '&version=1.1.0',
-      `&request=GetFeature&typeNames=${layer.get('name')}`,
+      `&request=GetFeature&typeNames=${searchHitLayerName}`,
       '&outputFormat=json',
       `&filter=<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc"><ogc:PropertyIsEqualTo><ogc:PropertyName>${queryAttribute}</ogc:PropertyName><ogc:Literal>${id}</ogc:Literal></ogc:PropertyIsEqualTo></ogc:Filter>`
     ].join(''));
@@ -90,29 +107,58 @@ const eksearch = function eksearch(options = {}) {
     const response = await fetch(sourceUrl + QueryString).then((res) => res.json());
 
     const features = format.readFeatures(response);
+
     if (features.length > 0) {
-      const coord = features[0].getGeometry().getFirstCoordinate();
-      const featureType = features[0].getGeometry();
+      const theGeom = features[0].getGeometry();
+      let coord;
+
+      if (theGeom instanceof Polygon) {
+        coord = theGeom.getInteriorPoint().getCoordinates();
+      } else if (theGeom instanceof MultiPolygon) {
+        coord = theGeom.getPolygon(0).getInteriorPoint().getCoordinates();
+      } else {
+        coord = theGeom.getFirstCoordinate();
+      }
+
       let resolution;
-
-      if (featureType instanceof MultiPoint) resolution = 0.28;
-      if (featureType instanceof MultiLineString) resolution = 14.0;
-
+      if (theGeom instanceof MultiPoint) resolution = 0.28;
+      if (theGeom instanceof MultiLineString) resolution = 14.0;
       if (!resolution) resolution = 2.8;
 
-      let FeatureInfoUrl = layer.getSource().getFeatureInfoUrl(coord, resolution, proj, {
+      let targetInfoLayer = layer;
+      let featureInfoUrlApplicationJson;
+      if (estatePartConfig && (searchHitLayerName === estatePartConfig.estatePartLayerName)) {
+        targetInfoLayer = viewer.getLayer(estatePartConfig.estateLayerName);
+        resolution = 0.14;
+        featureInfoUrlApplicationJson = targetInfoLayer.getSource().getFeatureInfoUrl(coord, resolution, proj, {
+          INFO_FORMAT: 'application/json',
+          feature_count: 20,
+          buffer: 1
+        });
+      }
+
+      let featureInfoUrlTextHtml = targetInfoLayer.getSource().getFeatureInfoUrl(coord, resolution, proj, {
         INFO_FORMAT: 'text/html',
         feature_count: 1,
         buffer: 2
       });
 
-      FeatureInfoUrl += encodeURI(`&filter=<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc"><ogc:PropertyIsEqualTo><ogc:PropertyName>${queryAttribute}</ogc:PropertyName><ogc:Literal>${id}</ogc:Literal></ogc:PropertyIsEqualTo></ogc:Filter>`);
+      if (targetInfoLayer === layer) { // The normal case. If not then there will be no id for the estateLayerName
+        featureInfoUrlTextHtml += encodeURI(`&filter=<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc"><ogc:PropertyIsEqualTo><ogc:PropertyName>${queryAttribute}</ogc:PropertyName><ogc:Literal>${id}</ogc:Literal></ogc:PropertyIsEqualTo></ogc:Filter>`);
+      }
 
-      fetch(FeatureInfoUrl)
-        .then((res) => res.text())
-        .then((ftl) => {
-          showFeatureInfo(features, layer, ftl);
-        });
+      const infoUrls = [featureInfoUrlTextHtml, featureInfoUrlApplicationJson].filter((infoUrl) => infoUrl);
+      const replies = await Promise.all(infoUrls.map((infoUrl) => fetch(infoUrl).then((res) => res.text())));
+
+      let targetFeatureCollection;
+      if (replies.length > 1) targetFeatureCollection = viewer.getMapUtils().geojsonToFeature(JSON.parse(replies[1]));
+      showFeatureInfo({
+        features,
+        layer,
+        textHTML: replies[0],
+        targetFeatureCollection,
+        targetLayer: targetInfoLayer === layer ? null : targetInfoLayer
+      });
     }
   }
 
@@ -323,6 +369,7 @@ const eksearch = function eksearch(options = {}) {
           layers: viewer.getSearchableLayers().reduce((acc, curr) => `${acc};${curr}`),
           date: new Date().getTime()
         };
+
         fetch(url, {
           method: 'POST',
           headers: {
