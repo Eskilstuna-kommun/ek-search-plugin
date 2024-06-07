@@ -67,21 +67,21 @@ const eksearch = function eksearch(options = {}) {
       targetLayer.set('attributes', 'textHtml');
       item = new Origo.SelectedItem(targetFeatureCollection[0], targetLayer, map, targetLayer.get('name'), targetLayer.get('title'));
     } else item = new Origo.SelectedItem(feature, layer, map, layer.get('name'), layer.get('title'));
-    let layerTitle = layer.get('title');
+    const layerTitle = layer.get('title');
 
     const isOverlay = viewer.getViewerOptions().featureinfoOptions.infowindow === 'overlay';
-    let geometry;
-    if (targetFeatureCollection) {
-      geometry = targetFeatureCollection[0].getGeometry();
-      layerTitle = targetLayer.get('title');
-    } else geometry = feature.getGeometry();
 
     if (isOverlay) {
       const obj = {};
-      obj.feature = targetFeatureCollection[0];
-      obj.title = layerTitle;
+      if (targetFeatureCollection) {
+        obj.feature = targetFeatureCollection[0];
+        obj.title = targetLayer.get('title');
+      } else {
+        obj.feature = feature;
+        obj.title = layerTitle;
+      }
       obj.content = `<div class="o-identify-content">${textHTML}</div>`;
-      featureInfo.render([obj], 'overlay', getCenter(geometry), { ignorePan: true });
+      featureInfo.render([obj], 'overlay', getCenter(feature.getGeometry()), { ignorePan: true });
     } else if (checkExistingSelection(item, selectionManager)) {
       selectionManager.addOrHighlightItem(item);
     }
@@ -149,7 +149,6 @@ const eksearch = function eksearch(options = {}) {
 
       const infoUrls = [featureInfoUrlTextHtml, featureInfoUrlApplicationJson].filter((infoUrl) => infoUrl);
       const replies = await Promise.all(infoUrls.map((infoUrl) => fetch(infoUrl).then((res) => res.text())));
-
       let targetFeatureCollection;
       if (replies.length > 1) targetFeatureCollection = viewer.getMapUtils().geojsonToFeature(JSON.parse(replies[1]));
       showFeatureInfo({
