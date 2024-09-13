@@ -13,10 +13,5 @@ module.exports = {
   externals: ['Origo'],
   resolve: {
     extensions: ['*', '.js', '.scss']
-  },
-  plugins: [
-    new webpack.ProvidePlugin({
-      fetch: 'exports-loader?self.fetch!whatwg-fetch/dist/fetch.umd'
-    })
-  ]
+  }
 };
