@@ -97,11 +97,13 @@ const eksearch = function eksearch(options = {}) {
     });
     const searchHitLayerName = layer.get('name');
 
-    const QueryString = encodeURI(['service=WFS',
+    const cqlFilter = encodeURIComponent(`${queryAttribute} = '${id}'`);
+
+    const QueryString = (['service=WFS',
       '&version=1.1.0',
       `&request=GetFeature&typeNames=${searchHitLayerName}`,
       '&outputFormat=json',
-      `&filter=<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc"><ogc:PropertyIsEqualTo><ogc:PropertyName>${queryAttribute}</ogc:PropertyName><ogc:Literal>${id}</ogc:Literal></ogc:PropertyIsEqualTo></ogc:Filter>`
+      `&cql_filter=${cqlFilter}`
     ].join(''));
 
     const response = await fetch(sourceUrl + QueryString).then((res) => res.json());
@@ -144,7 +146,7 @@ const eksearch = function eksearch(options = {}) {
       });
 
       if (targetInfoLayer === layer) { // The normal case. If not then there will be no id for the estateLayerName
-        featureInfoUrlTextHtml += encodeURI(`&filter=<ogc:Filter xmlns:ogc="http://www.opengis.net/ogc"><ogc:PropertyIsEqualTo><ogc:PropertyName>${queryAttribute}</ogc:PropertyName><ogc:Literal>${id}</ogc:Literal></ogc:PropertyIsEqualTo></ogc:Filter>`);
+        featureInfoUrlTextHtml += `&cql_filter=${cqlFilter}`;
       }
 
       const infoUrls = [featureInfoUrlTextHtml, featureInfoUrlApplicationJson].filter((infoUrl) => infoUrl);
