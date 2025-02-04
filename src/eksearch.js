@@ -2,8 +2,6 @@ import Origo from 'Origo';
 import GeoJSONFormat from 'ol/format/GeoJSON';
 import MultiPoint from 'ol/geom/MultiPoint';
 import MultiLineString from 'ol/geom/MultiLineString';
-import Polygon from 'ol/geom/Polygon';
-import MultiPolygon from 'ol/geom/MultiPolygon';
 import Awesomplete from 'awesomplete';
 import generateUUID from './utils/generateuuid';
 import checkExistingSelection from './utils/checkselection';
@@ -88,8 +86,7 @@ const eksearch = function eksearch(options = {}) {
     viewer.zoomToExtent(feature.getGeometry(), maxZoomLevel);
   }
 
-  async function getFeatureInfoWMS(source, layer, proj, id) {
-    const sourceUrl = `${source[layer.get('sourceName')].url.replace('wms', 'wfs')}?`;
+  async function getFeatureInfoWMS(source, layer, proj, id, px, py) {
     const geometryName = layer.get('geometryName');
     const queryAttribute = layer.get('queryAttribute') || 'sokid';
     const format = new GeoJSONFormat({
@@ -97,32 +94,29 @@ const eksearch = function eksearch(options = {}) {
     });
     const searchHitLayerName = layer.get('name');
 
+    // Set coord as px and py
+    const coord = [px, py];
+
     const cqlFilter = encodeURIComponent(`${queryAttribute} = '${id}'`);
 
-    const QueryString = (['service=WFS',
-      '&version=1.1.0',
-      `&request=GetFeature&typeNames=${searchHitLayerName}`,
-      '&outputFormat=json',
-      `&cql_filter=${cqlFilter}`
-    ].join(''));
+    let resolution = 2.8;
 
-    const response = await fetch(sourceUrl + QueryString).then((res) => res.json());
+    // Make a getFeatureInfoUrl request to the layer
+    const response = await fetch(
+      layer.getSource().getFeatureInfoUrl(coord, resolution, proj, {
+        INFO_FORMAT: 'application/json',
+        feature_count: 20,
+        buffer: 1
+      })
+    );
 
-    const features = format.readFeatures(response);
+    const jsonresponse = await response.json();
+
+    const features = format.readFeatures(jsonresponse);
 
     if (features.length > 0) {
       const theGeom = features[0].getGeometry();
-      let coord;
 
-      if (theGeom instanceof Polygon) {
-        coord = theGeom.getInteriorPoint().getCoordinates();
-      } else if (theGeom instanceof MultiPolygon) {
-        coord = theGeom.getPolygon(0).getInteriorPoint().getCoordinates();
-      } else {
-        coord = theGeom.getFirstCoordinate();
-      }
-
-      let resolution;
       if (theGeom instanceof MultiPoint) resolution = 0.28;
       if (theGeom instanceof MultiLineString) resolution = 14.0;
       if (!resolution) resolution = 2.8;
@@ -174,7 +168,11 @@ const eksearch = function eksearch(options = {}) {
 
       layer = viewer.getLayer(data[layerNameAttribute]);
       id = data[idAttribute];
-      getFeatureInfoWMS(source, layer, proj, id);
+
+      // Sets px and py
+      const px = data.px;
+      const py = data.py;
+      getFeatureInfoWMS(source, layer, proj, id, px, py);
     } else {
       console.log('Search options are missing');
     }
@@ -348,7 +346,9 @@ const eksearch = function eksearch(options = {}) {
           arr.push({
             id: obj.id,
             layername: hits.layername,
-            title: obj.title
+            title: obj.title,
+            px: obj.px, // Adds px
+            py: obj.py // Adds py
           });
         });
       });
@@ -367,8 +367,8 @@ const eksearch = function eksearch(options = {}) {
       if (options.type === 'postgis') {
         const data = {
           searchstring: obj.value,
-          layers: viewer.getSearchableLayers().reduce((acc, curr) => `${acc};${curr}`),
-          date: new Date().getTime()
+          layers: viewer.getSearchableLayers().reduce((acc, curr) => `${acc};${curr}`)
+          // date: new Date().getTime()
         };
 
         fetch(url, {
