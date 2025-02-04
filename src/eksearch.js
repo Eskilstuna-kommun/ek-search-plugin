@@ -89,7 +89,7 @@ const eksearch = function eksearch(options = {}) {
   async function getFeatureInfoWMS(source, layer, proj, id, px, py) {
     const geometryName = layer.get('geometryName');
     const queryAttribute = layer.get('queryAttribute') || 'sokid';
-    const format = new GeoJSONFormat({
+    const format = new Origo.ol.format.GeoJSON({
       geometryName
     });
     const searchHitLayerName = layer.get('name');
@@ -117,8 +117,8 @@ const eksearch = function eksearch(options = {}) {
     if (features.length > 0) {
       const theGeom = features[0].getGeometry();
 
-      if (theGeom instanceof MultiPoint) resolution = 0.28;
-      if (theGeom instanceof MultiLineString) resolution = 14.0;
+      if (theGeom instanceof Origo.ol.geom.MultiPoint) resolution = 0.28;
+      if (theGeom instanceof Origo.ol.geom.MultiLineString) resolution = 14.0;
       if (!resolution) resolution = 2.8;
 
       let targetInfoLayer = layer;

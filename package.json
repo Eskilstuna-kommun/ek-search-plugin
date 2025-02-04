@@ -11,8 +11,7 @@
   "author": "Origo",
   "license": "MIT",
   "dependencies": {
-    "awesomplete": "^1.1.7",
-    "ol": "^9.2.4"
+    "awesomplete": "^1.1.7"
   },
   "devDependencies": {
     "compression-webpack-plugin": "^10.0.0",
