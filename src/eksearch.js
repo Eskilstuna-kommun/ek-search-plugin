@@ -36,7 +36,7 @@ const eksearch = function eksearch(options = {}) {
     idAttribute,
     url,
     estatePartConfig,
-    featureInfoStyles
+    featureInfoStyles = []
   } = options;
 
   let searchDb = {};
