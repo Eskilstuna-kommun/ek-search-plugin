@@ -35,7 +35,8 @@ const eksearch = function eksearch(options = {}) {
   const {
     idAttribute,
     url,
-    estatePartConfig
+    estatePartConfig,
+    featureInfoStyles
   } = options;
 
   let searchDb = {};
@@ -98,12 +99,17 @@ const eksearch = function eksearch(options = {}) {
 
     let resolution = 2.8;
 
+    // Find the style for the matching layername
+    const styleObject = featureInfoStyles.find((style) => style.layername === searchHitLayerName);
+    const styles = styleObject ? styleObject.style : null;
+
     // Make a getFeatureInfoUrl request to the layer
     const response = await fetch(
       layer.getSource().getFeatureInfoUrl(coord, resolution, proj, {
         INFO_FORMAT: 'application/json',
         feature_count: 20,
-        buffer: 1
+        buffer: 1,
+        styles
       })
     );
 
