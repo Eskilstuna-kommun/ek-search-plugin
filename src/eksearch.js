@@ -1,7 +1,4 @@
 import Origo from 'Origo';
-import GeoJSONFormat from 'ol/format/GeoJSON';
-import MultiPoint from 'ol/geom/MultiPoint';
-import MultiLineString from 'ol/geom/MultiLineString';
 import Awesomplete from 'awesomplete';
 import generateUUID from './utils/generateuuid';
 import checkExistingSelection from './utils/checkselection';
