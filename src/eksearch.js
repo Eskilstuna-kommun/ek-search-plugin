@@ -95,9 +95,9 @@ const eksearch = function eksearch(options = {}) {
     // Set coord as px and py
     const coord = [px, py];
 
-    const cqlFilter = encodeURIComponent(`${queryAttribute} = '${id}'`);
+    const cqlFilterString = `${queryAttribute} = '${id}'`;
 
-    let resolution = 2.8;
+    let resolution = 0.28;
 
     // Find the style for the matching layername
     const styleObject = featureInfoStyles.find((style) => style.layername === searchHitLayerName);
@@ -109,7 +109,8 @@ const eksearch = function eksearch(options = {}) {
         INFO_FORMAT: 'application/json',
         feature_count: 20,
         buffer: 1,
-        styles
+        styles,
+        cql_filter: cqlFilterString
       })
     );
 
@@ -143,7 +144,7 @@ const eksearch = function eksearch(options = {}) {
       });
 
       if (targetInfoLayer === layer) { // The normal case. If not then there will be no id for the estateLayerName
-        featureInfoUrlTextHtml += `&cql_filter=${cqlFilter}`;
+        featureInfoUrlTextHtml += `&cql_filter=${encodeURIComponent(cqlFilterString)}`;
       }
 
       const infoUrls = [featureInfoUrlTextHtml, featureInfoUrlApplicationJson].filter((infoUrl) => infoUrl);
